@@ -1,4 +1,4 @@
-<?php namespace Ionut\LaravelFiveUpgrader;
+<?php namespace Ionut\LaravelFiveUpgrader\Annotations;
 
 
 class AnnotationGenerator {

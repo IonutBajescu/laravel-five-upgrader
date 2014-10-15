@@ -2,7 +2,7 @@
 
 
 use Illuminate\Support\Facades\Route;
-use Ionut\LaravelFiveUpgrader\AnnotationGenerator;
+use Ionut\LaravelFiveUpgrader\Annotations\AnnotationGenerator;
 
 class Routes implements UpgraderInterface {
 
@@ -39,9 +39,8 @@ class Routes implements UpgraderInterface {
                 }
 
                 $annotation = AnnotationGenerator::make('Get', $route->getPath(), $options);
-                var_dump($annotation);
 
-                $methodAnnotations[] = $annotation;
+                $methodAnnotations[$route->getActionName()] = $annotation;
             }
         }
     }
