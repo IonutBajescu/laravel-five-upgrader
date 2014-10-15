@@ -3,10 +3,22 @@
 
 use Illuminate\Support\Collection;
 
+/**
+ * Class AnnotationsCollection
+ *
+ * @package Ionut\LaravelFiveUpgrader\Annotations
+ */
 class AnnotationsCollection extends Collection {
 
-    public function generate(){
+    /**
+     * @param       $name
+     * @param       $value
+     * @param array $options
+     * @return string
+     */
+    public function append(){
         $generated = call_user_func_array('AnnotationGenerator::make', func_get_args());
         $this->prepend($generated);
+        return $generated;
     }
 } 

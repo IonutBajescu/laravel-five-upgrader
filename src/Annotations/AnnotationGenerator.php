@@ -1,8 +1,19 @@
 <?php namespace Ionut\LaravelFiveUpgrader\Annotations;
 
 
+/**
+ * Class AnnotationGenerator
+ *
+ * @package Ionut\LaravelFiveUpgrader\Annotations
+ */
 class AnnotationGenerator {
 
+    /**
+     * @param       $name
+     * @param       $value
+     * @param array $options
+     * @return string
+     */
     static public function make($name, $value, $options = []){
         $annotation = $name.'("'.$value.'"';
         $annotation = self::appendOptions($options, $annotation);
