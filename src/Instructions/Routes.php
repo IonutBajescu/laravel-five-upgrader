@@ -39,7 +39,11 @@ class Routes implements UpgraderInterface {
 
                 $annotation = 'Get("'.$route->getPath().'"';
                 foreach($options as $k => $v){
-                    $annotation .= ', '.$k.'={"'.implode('","', $v).'"}';
+                    if(is_array($v)){
+                        $annotation .= ', '.$k.'={"'.implode('","', $v).'"}';
+                    } else{
+                        $annotation .= ', '.$k.'="'.$v.'"';
+                    }
                 }
                 $annotation .= ')';
                 var_dump($annotation);
