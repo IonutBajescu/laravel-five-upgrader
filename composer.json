@@ -1,0 +1,10 @@
+{
+    "autoload": {
+        "psr-4": {
+            "Ionut\\LaravelFiveUpgrader\\": "src"
+        }
+    },
+    "require": {
+        "laravel/framework": "~4"
+    }
+}
