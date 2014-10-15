@@ -15,7 +15,7 @@ class AnnotationGenerator {
      * @return string
      */
     static public function make($name, $value, $options = []){
-        $annotation = $name.'("'.$value.'"';
+        $annotation = '@'.$name.'("'.$value.'"';
         $annotation = self::appendOptions($options, $annotation);
         $annotation .= ')';
 

@@ -17,8 +17,22 @@ class AnnotationsCollection extends Collection {
      * @return string
      */
     public function append(){
-        $generated = call_user_func_array('AnnotationGenerator::make', func_get_args());
+        $generated = call_user_func_array(AnnotationGenerator::class.'::make', func_get_args());
         $this->prepend($generated);
         return $generated;
+    }
+
+    public function compile(){
+        $annotations = '';
+        foreach($this as $annotation){
+            $annotations .= '     * '.$annotation.PHP_EOL;
+        }
+
+        return
+<<<COMPILED
+    /**
+$annotations     */
+COMPILED;
+
     }
 } 
