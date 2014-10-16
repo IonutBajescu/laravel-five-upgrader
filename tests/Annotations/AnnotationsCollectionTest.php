@@ -18,7 +18,7 @@ class AnnotationsCollectionTest extends PHPUnit_Framework_TestCase {
      */
 COMPILED;
 
-        $this->assertEquals($collection->compile(), $compiled);
+        $this->assertEquals($compiled, $collection->compile());
     }
 }
  

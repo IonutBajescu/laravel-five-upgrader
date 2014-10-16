@@ -2,7 +2,6 @@
 
 
 use Illuminate\Support\Facades\Route;
-use Ionut\LaravelFiveUpgrader\Annotations\AnnotationGenerator;
 use Ionut\LaravelFiveUpgrader\Annotations\AnnotationsCollection;
 
 /**
@@ -10,35 +9,34 @@ use Ionut\LaravelFiveUpgrader\Annotations\AnnotationsCollection;
  *
  * @package Ionut\LaravelFiveUpgrader\Instructions
  */
-class Routes implements UpgraderInterface {
+class Routes implements UpgraderInterface
+{
 
     /**
-     * @var string
+     * @var \League\Flysystem\Filesystem
      */
-    protected $filename = 'app/routes.php';
+    protected $files;
 
     /**
-     * @var string
+     * @param \League\Flysystem\Filesystem $files
      */
-    protected $path;
-
-    /**
-     * @param $path
-     */
-    function __construct($path)
+    function __construct(\League\Flysystem\Filesystem $files)
     {
-        $this->path = $path;
+        $this->files = $files;
     }
 
 
     /**
      * @return \Illuminate\Routing\RouteCollection
      */
-    public function routes(){
+    public function routes()
+    {
         $router = new \Illuminate\Routing\Router(new \Illuminate\Events\Dispatcher);
         Route::swap($router);
 
-        require $this->getRoutesFile();
+        $routesCode = $this->files->read('app/routes.php');
+        $routesCode = str_replace(['<?php', '?>'], '', $routesCode);
+        eval($routesCode);
 
         return $router->getRoutes();
     }
@@ -47,34 +45,21 @@ class Routes implements UpgraderInterface {
      * Transfer all controller routes from routes.php to
      * new annotations, directly in controller methods.
      */
-    public function upgrade(){
-        foreach($this->routes() as $route){
-            /** @var \Illuminate\Routing\Route $route */
-
-            if($route->getActionName() == 'Closure') continue;
-
-            if($route->methods() == ['GET', 'HEAD']){
-                $annotations = $this->getRouteAnnotations($route);
-
-                // @todo write annotation in file
-                $annotations;
-            }
-        }
-    }
-
-    /**
-     * @return string
-     */
-    private function getRoutesFile()
+    public function upgrade()
     {
-        return $this->path.'/'.$this->filename;
+        $routesAnnotations = $this->getRoutesAnnotations();
+
+        /**
+         * @todo Write annotation in file
+         *       (test first this shit)
+         */
     }
 
     /**
      * @param $route
      * @return AnnotationsCollection
      */
-    protected function getRouteAnnotations($route)
+    public function getRouteAnnotations($route)
     {
         $options = [];
         if ($route->getName()) {
@@ -85,5 +70,31 @@ class Routes implements UpgraderInterface {
         $annotations->append('Get', $route->getPath(), $options);
 
         return $annotations;
+    }
+
+    /**
+     * Generate routes annotations with routes parsed
+     * from app/routes.php file. Is a good night.
+     *
+     * @return array.
+     */
+    public function getRoutesAnnotations()
+    {
+        $routesAnnotations = [];
+        foreach ($this->routes() as $route) {
+            /** @var \Illuminate\Routing\Route $route */
+
+            if ($route->getActionName() == 'Closure') {
+                continue;
+            }
+
+            if ($route->methods() == ['GET', 'HEAD']) {
+                $annotations = $this->getRouteAnnotations($route);
+
+                $routesAnnotations[ $route->getActionName() ] = $annotations;
+            }
+        }
+
+        return $routesAnnotations;
     }
 }
