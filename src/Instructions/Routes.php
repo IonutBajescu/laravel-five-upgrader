@@ -53,17 +53,11 @@ class Routes implements UpgraderInterface {
 
             if($route->getActionName() == 'Closure') continue;
 
-            $methodAnnotations = [];
             if($route->methods() == ['GET', 'HEAD']){
-                $options = [];
-                if($route->getName()){
-                    $options['as'] = $route->getName();
-                }
+                $annotations = $this->getRouteAnnotations($route);
 
-                $annotation = new AnnotationsCollection();
-                $annotation->append('Get', $route->getPath(), $options);
-
-                $methodAnnotations[$route->getActionName()] = $annotation;
+                // @todo write annotation in file
+                $annotations;
             }
         }
     }
@@ -74,5 +68,22 @@ class Routes implements UpgraderInterface {
     private function getRoutesFile()
     {
         return $this->path.'/'.$this->filename;
+    }
+
+    /**
+     * @param $route
+     * @return AnnotationsCollection
+     */
+    protected function getRouteAnnotations($route)
+    {
+        $options = [];
+        if ($route->getName()) {
+            $options['as'] = $route->getName();
+        }
+
+        $annotations = new AnnotationsCollection();
+        $annotations->append('Get', $route->getPath(), $options);
+
+        return $annotations;
     }
 }
