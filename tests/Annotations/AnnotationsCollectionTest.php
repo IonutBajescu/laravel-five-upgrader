@@ -12,7 +12,7 @@ class AnnotationsCollectionTest extends PHPUnit_Framework_TestCase {
         $collection->append('Get', '/some/location', ['as' => 'named']);
 
         $compiled = <<<COMPILED
-    /**
+/**
      * @Get("/some/location", as="named")
      * @Middleware("SomeMiddleware")
      */

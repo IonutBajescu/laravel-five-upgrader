@@ -2,6 +2,7 @@
 
 
 use Illuminate\Support\Collection;
+use PhpParser\Comment\Doc;
 
 /**
  * Class AnnotationsCollection
@@ -9,6 +10,8 @@ use Illuminate\Support\Collection;
  * @package Ionut\LaravelFiveUpgrader\Annotations
  */
 class AnnotationsCollection extends Collection {
+
+    const TAB = '    ';
 
     /**
      * @param       $name
@@ -22,17 +25,68 @@ class AnnotationsCollection extends Collection {
         return $generated;
     }
 
-    public function compile(){
+	/**
+	 * Return PHP-Parser parsable comments
+	 */
+	public function parsable(){
+		return new Doc($this->compile());
+	}
+
+	public function setBase($base){
+		$base = $this->prepareArrayBase($base);
+		if(count($base) >= 1){
+			$base[] = '';
+		}
+
+		$array = $this->toArray();
+		foreach(array_reverse($base) as $doc){
+			array_unshift($array, $doc);
+		}
+
+
+		return new static($array);
+	}
+
+    /**
+     * @param string $base Initial docblock value, we will append to
+     *                     that value our annotations.
+     * @return string
+     */
+    public function compile($base = ''){
+        $base = $this->prepareStringBase($base);
         $annotations = '';
         foreach($this as $annotation){
-            $annotations .= '     * '.$annotation.PHP_EOL;
+            $annotations .= self::TAB.' * '.$annotation.PHP_EOL;
         }
 
-        return
-<<<COMPILED
-    /**
-$annotations     */
-COMPILED;
+        return "/**\n{$base}{$annotations}".self::TAB." */";
 
     }
-} 
+
+	/**
+	 * @param $base
+	 */
+	private function prepareArrayBase($base)
+	{
+		if(!$base) return '';
+
+		$base = preg_replace('#\s*/\\*\\*\s*#', '', $base);
+		$base = preg_replace('#\s*\\*/\s*#', '', $base);
+		$base = explode(PHP_EOL, $base);
+		return array_map(function($v){
+			return preg_replace('#\s*\*\s*#', '', $v);
+		}, $base);
+	}
+
+    /**
+     * @param $base
+     */
+    private function prepareStringBase($base)
+    {
+        if(!$base) return '';
+
+        $base = preg_replace('#\s*/\\*\\*\s*#', '', $base);
+        $base = preg_replace('#\s*\\*/\s*#', '', $base);
+        return self::TAB.' '.rtrim($base)."\n".self::TAB." *\n";
+    }
+}

@@ -26,12 +26,12 @@ class TestingAdapter extends NullAdapter {
 
 
     /**
-     * @param $file
+     * @param $path
      * @param $sourceFile
      */
-    public function mock($file, $sourceFile)
+    public function mock($path, $sourceFile)
     {
-        $this->files[$file] = file_get_contents($sourceFile);
+        $this->write($path, file_get_contents($sourceFile));
     }
 
     /**
@@ -40,6 +40,7 @@ class TestingAdapter extends NullAdapter {
      */
     public function read($path)
     {
+        $path = ltrim($path, '/');
         $contents = $this->files[$path];
         return compact('contents', 'path');
     }
@@ -52,6 +53,7 @@ class TestingAdapter extends NullAdapter {
      */
     public function write($path, $contents, $config = null)
     {
+        $path = ltrim($path, '/');
         $this->files[$path] = $contents;
         return parent::write($path, $contents, $config);
     }
@@ -61,7 +63,12 @@ class TestingAdapter extends NullAdapter {
      * @return bool
      */
     public function has($path)
-    {
+   {
         return isset($this->files[$path]);
+    }
+
+    public function update($path, $contents, $config = null)
+    {
+        return call_user_func_array([$this, 'write'], func_get_args());
     }
 }

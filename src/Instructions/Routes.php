@@ -3,6 +3,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Ionut\LaravelFiveUpgrader\Annotations\AnnotationsCollection;
+use PhpParser\Node;
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\PrettyPrinter\Standard;
 
 /**
  * Class Routes
@@ -23,7 +27,8 @@ class Routes implements UpgraderInterface
     function __construct(\League\Flysystem\Filesystem $files)
     {
         $this->files = $files;
-    }
+		$this->parser = new \PhpParser\Parser(new \PhpParser\Lexer\Emulative);
+	}
 
 
     /**
@@ -49,17 +54,26 @@ class Routes implements UpgraderInterface
     {
         $routesAnnotations = $this->getRoutesAnnotations();
 
-        /**
-         * @todo Write annotation in file
-         *       (test first this shit)
-         */
+        // a mai ramas problema ca la $LINES_BEHIND practic conteaza doar daca metoda e sub cea afectata, deci trebuie sa verific cumva pozitia in fisier
+
+        foreach($routesAnnotations as $location => $annotationsCollection){
+            list($controller, $methodName) = explode('@', $location);
+
+			$reflected = new \ReflectionClass($controller);
+
+			$parsed = $this->setNewComments($reflected, $methodName, $annotationsCollection);
+
+			$prettyPrinter = new Standard;
+			$content = $prettyPrinter->prettyPrintFile($parsed);
+            $this->files->put($reflected->getFileName(), $content);
+        }
     }
 
     /**
      * @param $route
      * @return AnnotationsCollection
      */
-    public function getRouteAnnotations($route)
+    public function getRouteAnnotations(\Illuminate\Routing\Route $route)
     {
         $options = [];
         if ($route->getName()) {
@@ -67,7 +81,9 @@ class Routes implements UpgraderInterface
         }
 
         $annotations = new AnnotationsCollection();
-        $annotations->append('Get', $route->getPath(), $options);
+
+        $method = $this->getRouteVerb($route);
+        $annotations->append($method, $route->getPath(), $options);
 
         return $annotations;
     }
@@ -84,17 +100,66 @@ class Routes implements UpgraderInterface
         foreach ($this->routes() as $route) {
             /** @var \Illuminate\Routing\Route $route */
 
-            if ($route->getActionName() == 'Closure') {
+            if(!isset($route->getAction()['controller'])){
                 continue;
             }
 
-            if ($route->methods() == ['GET', 'HEAD']) {
-                $annotations = $this->getRouteAnnotations($route);
-
-                $routesAnnotations[ $route->getActionName() ] = $annotations;
-            }
+            $annotations = $this->getRouteAnnotations($route);
+            $routesAnnotations[ $route->getAction()['controller'] ] = $annotations;
         }
 
         return $routesAnnotations;
     }
+
+    /**
+     * @param \Illuminate\Routing\Route $route
+     * @return string
+     */
+    protected function getRouteVerb(\Illuminate\Routing\Route $route)
+    {
+        if ($route->methods() == ['GET', 'HEAD']) {
+            $method = 'Get';
+        }
+        if ($route->methods() == ['POST']) {
+            $method = 'Post';
+        }
+        if ($route->methods() == ['PUT']) {
+            $method = 'Put';
+        }
+        if ($route->methods() == ['DELETE']) {
+            $method = 'Delete';
+
+            return $method;
+        }
+
+        return $method;
+    }
+
+	/**
+	 * @param $reflected
+	 * @param $methodName
+	 * @param $annotationsCollection
+	 * @return \PhpParser\Node[]
+	 */
+	public function setNewComments($reflected, $methodName, $annotationsCollection)
+	{
+		$initial_content = $this->files->read($reflected->getFileName());
+		$parsed = $this->parser->parse($initial_content);
+		foreach ($parsed as $class) {
+			if ($class instanceOf Class_) {
+				foreach ($class->getMethods() as $classMethod) {
+					if ($classMethod->name == $methodName) {
+						$annotationsCollection = $annotationsCollection->setBase($classMethod->getDocComment()->getText());
+						$classMethod->setAttribute('comments', [$annotationsCollection->parsable()]);
+
+						break;
+					}
+				}
+
+				break;
+			}
+		}
+
+		return $parsed;
+	}
 }
